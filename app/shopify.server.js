@@ -7,7 +7,6 @@ import {
 } from "@shopify/shopify-app-remix/server";
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import { restResources } from "@shopify/shopify-api/rest/admin/2023-10";
-import { LogSeverity } from "@shopify/shopify-app-remix/server";
 
 import prisma from "./db.server";
 
@@ -31,9 +30,6 @@ const shopify = shopifyApp({
     afterAuth: async ({ session }) => {
       shopify.registerWebhooks({ session });
     },
-  },
-  logger: {
-    level: LogSeverity.Debug
   },
   ...(process.env.SHOP_CUSTOM_DOMAIN
     ? { customShopDomains: [process.env.SHOP_CUSTOM_DOMAIN] }

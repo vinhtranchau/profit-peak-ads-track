@@ -1,18 +1,11 @@
 import { useEffect } from "react";
 import { json } from "@remix-run/node";
-import { useActionData, useLoaderData, useNavigation, useSubmit } from "@remix-run/react";
+import { useLoaderData, useNavigation } from "@remix-run/react";
 import {
   Page,
   Layout,
-  Text,
-  VerticalStack,
-  Card,
-  Button,
-  HorizontalStack,
-  Box,
-  Divider,
-  List,
-  Link,
+  LegacyCard, 
+  IndexTable,
 } from "@shopify/polaris";
 
 import { authenticate } from "../shopify.server";
@@ -22,88 +15,57 @@ export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
   const response = await admin.graphql(`
     query getOrders {
-      fulfillmentOrders (first: 30) {
+      orders (first: 30, query: "status:any") {
         edges {
           node {
-            requestStatus
-            createdAt
-            updatedAt
-            status
-            fulfillAt
-            fulfillBy
-            order {
+            id
+            name
+            note
+            customer {
               id
-              name
-              note
-              customer {
-                id
-                firstName
-                lastName
-              }
-              customerJourneySummary {
-                customerOrderIndex
-                daysToConversion
-                firstVisit {
-                  landingPage
-                  landingPageHtml
-                  marketingEvent {
-                    channel
-                    endedAt
-                    manageUrl
-                    previewUrl
-                    remoteId
-                    sourceAndMedium
-                    utmCampaign
-                    utmMedium
-                    utmSource
-                  }
-                  occurredAt
-                  referralCode
-                  referralInfoHtml
-                  referrerUrl
+              firstName
+              lastName
+            }
+            customerJourneySummary {
+              customerOrderIndex
+              daysToConversion
+              momentsCount
+              firstVisit {
+                landingPage
+                landingPageHtml
+                occurredAt
+                referralCode
+                referralInfoHtml
+                referrerUrl
+                source
+                sourceDescription
+                sourceType
+                utmParameters {
+                  campaign
+                  content
+                  medium
                   source
-                  sourceDescription
-                  sourceType
-                  utmParameters {
-                    campaign
-                    content
-                    medium
-                    source
-                    term
-                  }
-                }
-                lastVisit {
-                  landingPage
-                  landingPageHtml
-                  marketingEvent {
-                    channel
-                    endedAt
-                    manageUrl
-                    previewUrl
-                    remoteId
-                    sourceAndMedium
-                    utmCampaign
-                    utmMedium
-                    utmSource
-                  }
-                  occurredAt
-                  referralCode
-                  referralInfoHtml
-                  referrerUrl
-                  source
-                  sourceDescription
-                  sourceType
-                  utmParameters {
-                    campaign
-                    content
-                    medium
-                    source
-                    term
-                  }
+                  term
                 }
               }
-              createdAt
-              displayFulfillmentStatus
+              lastVisit {
+                landingPage
+                landingPageHtml
+                occurredAt
+                referralCode
+                referralInfoHtml
+                referrerUrl
+                source
+                sourceDescription
+                sourceType
+                utmParameters {
+                  campaign
+                  content
+                  medium
+                  source
+                  term
+                }
+              }
             }
           }
         }
@@ -112,261 +74,143 @@ export const loader = async ({ request }) => {
   `);
   const responseJson = await response.json();
 
-  const orders = responseJson?.data?.fulfillmentOrders?.edges?.map(
+  const orders = responseJson?.data?.orders?.edges?.map(
     (edge) => edge.node
   ) || [[]];
-
-  console.log("Fullfilment Orders:", orders);
 
   return json({
     orders: orders,
   });
 };
 
-export async function action({ request }) {
-  const { admin } = await authenticate.admin(request);
-
-  const color = ["Red", "Orange", "Yellow", "Green"][
-    Math.floor(Math.random() * 4)
-  ];
-  const response = await admin.graphql(
-    `#graphql
-      mutation populateProduct($input: ProductInput!) {
-        productCreate(input: $input) {
-          product {
-            id
-            title
-            handle
-            status
-            variants(first: 10) {
-              edges {
-                node {
-                  id
-                  price
-                  barcode
-                  createdAt
-                }
-              }
-            }
-          }
-        }
-      }`,
-    {
-      variables: {
-        input: {
-          title: `${color} Snowboard`,
-          variants: [{ price: Math.random() * 100 }],
-        },
-      },
-    }
-  );
-
-  const responseJson = await response.json();
-
-  return json({
-    product: responseJson.data.productCreate.product,
-  });
-}
-
 export default function Index() {
   const nav = useNavigation();
-  const actionData = useActionData();
-  const submit = useSubmit();
-  const orders = useLoaderData();
+  const data = useLoaderData();
 
-  const isLoading =
-    ["loading", "submitting"].includes(nav.state) && nav.formMethod === "POST";
+  const isLoading = ["loading"].includes(nav.state);
+  const itemCounts = 11;
 
-  const productId = actionData?.product?.id.replace(
-    "gid://shopify/Product/",
-    ""
-  );
+  const resourceName = {
+    singular: 'visit',
+    plural: 'visits',
+  };
 
   useEffect(() => {
-    if (orders) {
+    if (data) {
       shopify.toast.show("Orders received");
     }
-  }, [orders]);
+  }, [data]);
 
-  const generateProduct = () => submit({}, { replace: true, method: "POST" });
+  const refresh = () => {};
+
+  const rowMarkup = (data?.orders != undefined) && data?.orders.map(
+    (
+      order,
+      index,
+    ) => (
+      <IndexTable.Row
+        id={order.id}
+        key={order.id}
+        position={index}
+      >
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{index + 1}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.id}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.name}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.note}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customer && order.customer.id}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customer && (order.customer.firstName + " " + order.customer.lastName)}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.customerOrderIndex}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.daysToConversion}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.momentsCount}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.landingPage}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.occurredAt}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.referralCode}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.referralInfoHtml}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.referrerUrl}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.source}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.sourceDescription}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.sourceType}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.utmParameters && order.customerJourneySummary.firstVisit.utmParameters.campaign}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.utmParameters && order.customerJourneySummary.firstVisit.utmParameters.content}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.utmParameters && order.customerJourneySummary.firstVisit.utmParameters.medium}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.utmParameters && order.customerJourneySummary.firstVisit.utmParameters.source}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.utmParameters && order.customerJourneySummary.firstVisit.utmParameters.term}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.landingPage}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.landingPageHtml}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.occurredAt}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.referralCode}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.referralInfoHtml}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.referrerUrl}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.source}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.sourceDescription}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.sourceType}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.utmParameters && order.customerJourneySummary.lastVisit.utmParameters.campaign}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.utmParameters && order.customerJourneySummary.lastVisit.utmParameters.content}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.utmParameters && order.customerJourneySummary.lastVisit.utmParameters.medium}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.utmParameters && order.customerJourneySummary.lastVisit.utmParameters.source}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.utmParameters && order.customerJourneySummary.lastVisit.utmParameters.term}</div></IndexTable.Cell>
+      </IndexTable.Row>
+    ),
+  );
 
   return (
-    <Page>
+    <Page fullWidth>
       <ui-title-bar title="Profit Peak Ads Track">
-        <button variant="primary" onClick={generateProduct}>
-          Generate a product
+        <button variant="primary" onClick={refresh}>
+          Refresh
         </button>
       </ui-title-bar>
-      <VerticalStack gap="5">
-        <Layout>
-          <Layout.Section>
-            <Card>
-              <VerticalStack gap="5">
-                <VerticalStack gap="2">
-                  <Text as="h2" variant="headingMd">
-                    Congrats on creating a new Shopify app 🎉
-                  </Text>
-                  <Text variant="bodyMd" as="p">
-                    This embedded app template uses{" "}
-                    <Link
-                      url="https://shopify.dev/docs/apps/tools/app-bridge"
-                      target="_blank"
-                    >
-                      App Bridge
-                    </Link>{" "}
-                    interface examples like an{" "}
-                    <Link url="/app/additional">
-                      additional page in the app nav
-                    </Link>
-                    , as well as an{" "}
-                    <Link
-                      url="https://shopify.dev/docs/api/admin-graphql"
-                      target="_blank"
-                    >
-                      Admin GraphQL
-                    </Link>{" "}
-                    mutation demo, to provide a starting point for app
-                    development.
-                  </Text>
-                </VerticalStack>
-                <VerticalStack gap="2">
-                  <Text as="h3" variant="headingMd">
-                    Get started with products
-                  </Text>
-                  <Text as="p" variant="bodyMd">
-                    Generate a product with GraphQL and get the JSON output for
-                    that product. Learn more about the{" "}
-                    <Link
-                      url="https://shopify.dev/docs/api/admin-graphql/latest/mutations/productCreate"
-                      target="_blank"
-                    >
-                      productCreate
-                    </Link>{" "}
-                    mutation in our API references.
-                  </Text>
-                </VerticalStack>
-                <HorizontalStack gap="3" align="end">
-                  {actionData?.product && (
-                    <Button
-                      url={`shopify:admin/products/${productId}`}
-                      target="_blank"
-                    >
-                      View product
-                    </Button>
-                  )}
-                  <Button loading={isLoading} primary onClick={generateProduct}>
-                    Generate a product
-                  </Button>
-                </HorizontalStack>
-                {actionData?.product && (
-                  <Box
-                    padding="4"
-                    background="bg-subdued"
-                    borderColor="border"
-                    borderWidth="1"
-                    borderRadius="2"
-                    overflowX="scroll"
-                  >
-                    <pre style={{ margin: 0 }}>
-                      <code>{JSON.stringify(actionData.product, null, 2)}</code>
-                    </pre>
-                  </Box>
-                )}
-              </VerticalStack>
-            </Card>
-          </Layout.Section>
-          <Layout.Section secondary>
-            <VerticalStack gap="5">
-              <Card>
-                <VerticalStack gap="2">
-                  <Text as="h2" variant="headingMd">
-                    App template specs
-                  </Text>
-                  <VerticalStack gap="2">
-                    <Divider />
-                    <HorizontalStack align="space-between">
-                      <Text as="span" variant="bodyMd">
-                        Framework
-                      </Text>
-                      <Link url="https://remix.run" target="_blank">
-                        Remix
-                      </Link>
-                    </HorizontalStack>
-                    <Divider />
-                    <HorizontalStack align="space-between">
-                      <Text as="span" variant="bodyMd">
-                        Database
-                      </Text>
-                      <Link url="https://www.prisma.io/" target="_blank">
-                        Prisma
-                      </Link>
-                    </HorizontalStack>
-                    <Divider />
-                    <HorizontalStack align="space-between">
-                      <Text as="span" variant="bodyMd">
-                        Interface
-                      </Text>
-                      <span>
-                        <Link url="https://polaris.shopify.com" target="_blank">
-                          Polaris
-                        </Link>
-                        {", "}
-                        <Link
-                          url="https://shopify.dev/docs/apps/tools/app-bridge"
-                          target="_blank"
-                        >
-                          App Bridge
-                        </Link>
-                      </span>
-                    </HorizontalStack>
-                    <Divider />
-                    <HorizontalStack align="space-between">
-                      <Text as="span" variant="bodyMd">
-                        API
-                      </Text>
-                      <Link
-                        url="https://shopify.dev/docs/api/admin-graphql"
-                        target="_blank"
-                      >
-                        GraphQL API
-                      </Link>
-                    </HorizontalStack>
-                  </VerticalStack>
-                </VerticalStack>
-              </Card>
-              <Card>
-                <VerticalStack gap="2">
-                  <Text as="h2" variant="headingMd">
-                    Next steps
-                  </Text>
-                  <List spacing="extraTight">
-                    <List.Item>
-                      Build an{" "}
-                      <Link
-                        url="https://shopify.dev/docs/apps/getting-started/build-app-example"
-                        target="_blank"
-                      >
-                        {" "}
-                        example app
-                      </Link>{" "}
-                      to get started
-                    </List.Item>
-                    <List.Item>
-                      Explore Shopify’s API with{" "}
-                      <Link
-                        url="https://shopify.dev/docs/apps/tools/graphiql-admin-api"
-                        target="_blank"
-                      >
-                        GraphiQL
-                      </Link>
-                    </List.Item>
-                  </List>
-                </VerticalStack>
-              </Card>
-            </VerticalStack>
-          </Layout.Section>
-        </Layout>
-      </VerticalStack>
+      <Layout>
+        <Layout.Section>
+          <LegacyCard>
+            <IndexTable
+              selectable={false}
+              resourceName={resourceName}
+              itemCount={data?.orders != undefined && data?.orders.length}
+              headings={[
+                {title: 'No', alignment: 'center'},
+                {title: 'Order ID', alignment: 'center'},
+                {title: 'Order Name', alignment: 'center'},
+                {title: 'Order Note', alignment: 'center'},
+                {title: 'Customer ID', alignment: 'center'},
+                {title: 'Customer Name', alignment: 'center'},
+                {title: 'Customer Order Index', alignment: 'center'},
+                {title: 'Days to Conversion', alignment: 'center'},
+                {title: 'Total Sessions', alignment: 'center'},
+                {title: 'FirstVisit Landing Page', alignment: 'center'},
+                {title: 'FirstVisit OccurredAt', alignment: 'center'},
+                {title: 'FirstVisit Referral Code', alignment: 'center'},
+                {title: 'FirstVisit Referral Info Html', alignment: 'center'},
+                {title: 'FirstVisit Referral URL', alignment: 'center'},
+                {title: 'FirstVisit Source', alignment: 'center'},
+                {title: 'FirstVisit Source Description', alignment: 'center'},
+                {title: 'FirstVisit Source Type', alignment: 'center'},
+                {title: 'FirstVisit UTM Campaign', alignment: 'center'},
+                {title: 'FirstVisit UTM Content', alignment: 'center'},
+                {title: 'FirstVisit UTM Medium', alignment: 'center'},
+                {title: 'FirstVisit UTM Source', alignment: 'center'},
+                {title: 'FirstVisit UTM Term', alignment: 'center'},
+                {title: 'LastVisit Landing Page', alignment: 'center'},
+                {title: 'LastVisit Landing Page Html', alignment: 'center'},
+                {title: 'LastVisit OccurredAt', alignment: 'center'},
+                {title: 'LastVisit Referral Code', alignment: 'center'},
+                {title: 'LastVisit Referral Info Html', alignment: 'center'},
+                {title: 'LastVisit Referral URL', alignment: 'center'},
+                {title: 'LastVisit Source', alignment: 'center'},
+                {title: 'LastVisit Source Description', alignment: 'center'},
+                {title: 'LastVisit Source Type', alignment: 'center'},
+                {title: 'LastVisit UTM Campaign', alignment: 'center'},
+                {title: 'LastVisit UTM Content', alignment: 'center'},
+                {title: 'LastVisit UTM Medium', alignment: 'center'},
+                {title: 'LastVisit UTM Source', alignment: 'center'},
+                {title: 'LastVisit UTM Term', alignment: 'center'},
+              ]}
+            >
+            { rowMarkup }
+          </IndexTable>
+        </LegacyCard>
+        </Layout.Section>
+      </Layout>
     </Page>
   );
 }

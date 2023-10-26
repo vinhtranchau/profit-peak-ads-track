@@ -16,6 +16,18 @@ export const action = async ({ request }) => {
         await db.session.deleteMany({ where: { shop } });
       }
       break;
+    case "ORDERS_CREATE":
+      console.log("Order Created!");
+      break;
+    case "ORDER_TRANSACTIONS_CREATE":
+      console.log("Order Transaction Created!");
+      break;
+    case "CARTS_CREATE":
+      console.log("Cart Created!");
+      break;
+    case "CARTS_UPDATE":
+      console.log("Cart Updated!");
+      break;
     case "CUSTOMERS_DATA_REQUEST":
     case "CUSTOMERS_REDACT":
     case "SHOP_REDACT":

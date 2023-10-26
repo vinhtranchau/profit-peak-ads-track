@@ -24,7 +24,28 @@ const shopify = shopifyApp({
     APP_UNINSTALLED: {
       deliveryMethod: DeliveryMethod.Http,
       callbackUrl: "/webhooks",
+      callback: async (topic, shopDomain, body, webhookId) => {},
     },
+    ORDERS_CREATE: {
+      deliveryMethod: DeliveryMethod.Http,
+      callbackUrl: "/webhooks",
+      callback: async (topic, shopDomain, body, webhookId) => {},
+    },
+    ORDER_TRANSACTIONS_CREATE: {
+      deliveryMethod: DeliveryMethod.Http,
+      callbackUrl: "/webhooks",
+      callback: async (topic, shopDomain, body, webhookId) => {},
+    },
+    CARTS_CREATE: {
+      deliveryMethod: DeliveryMethod.Http,
+      callbackUrl: "/webhooks",
+      callback: async (topic, shopDomain, body, webhookId) => {},
+    },
+    CARTS_UPDATE: {
+      deliveryMethod: DeliveryMethod.Http,
+      callbackUrl: "/webhooks",
+      callback: async (topic, shopDomain, body, webhookId) => {},
+    }
   },
   hooks: {
     afterAuth: async ({ session }) => {

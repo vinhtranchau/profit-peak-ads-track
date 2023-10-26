@@ -2,7 +2,7 @@
 
 name = "profit-peak-ads-track"
 client_id = "101ea4c76046514d4961f228a58397ac"
-application_url = "https://supposed-specs-candidates-ceramic.trycloudflare.com"
+application_url = "https://side-value-charter-talking.trycloudflare.com"
 embedded = true
 
 [access_scopes]
@@ -11,9 +11,9 @@ scopes = "write_products,read_orders,read_assigned_fulfillment_orders,read_merch
 
 [auth]
 redirect_urls = [
-  "https://supposed-specs-candidates-ceramic.trycloudflare.com/auth/callback",
-  "https://supposed-specs-candidates-ceramic.trycloudflare.com/auth/shopify/callback",
-  "https://supposed-specs-candidates-ceramic.trycloudflare.com/api/auth/callback"
+  "https://side-value-charter-talking.trycloudflare.com/auth/callback",
+  "https://side-value-charter-talking.trycloudflare.com/auth/shopify/callback",
+  "https://side-value-charter-talking.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

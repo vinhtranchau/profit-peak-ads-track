@@ -7,6 +7,7 @@ import {
 } from "@shopify/shopify-app-remix/server";
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import { restResources } from "@shopify/shopify-api/rest/admin/2023-10";
+import { LogSeverity } from "@shopify/shopify-app-remix/server";
 
 import prisma from "./db.server";
 
@@ -20,31 +21,45 @@ const shopify = shopifyApp({
   sessionStorage: new PrismaSessionStorage(prisma),
   distribution: AppDistribution.AppStore,
   restResources,
+  logger: {
+    level: LogSeverity.Debug
+  },
+  future: {
+    v3_webhookAdminContext: true,
+  },
   webhooks: {
     APP_UNINSTALLED: {
       deliveryMethod: DeliveryMethod.Http,
       callbackUrl: "/webhooks",
-      callback: async (topic, shopDomain, body, webhookId) => {},
     },
     ORDERS_CREATE: {
       deliveryMethod: DeliveryMethod.Http,
       callbackUrl: "/webhooks",
-      callback: async (topic, shopDomain, body, webhookId) => {},
+      callback: async (topic, shopDomain, session, admin, payload) => {},
     },
     ORDER_TRANSACTIONS_CREATE: {
       deliveryMethod: DeliveryMethod.Http,
       callbackUrl: "/webhooks",
-      callback: async (topic, shopDomain, body, webhookId) => {},
+      callback: async (topic, shopDomain, session, admin, payload) => {},
     },
     CARTS_CREATE: {
       deliveryMethod: DeliveryMethod.Http,
       callbackUrl: "/webhooks",
-      callback: async (topic, shopDomain, body, webhookId) => {},
+      callback: async (topic, shopDomain, session, admin, payload) => {},
     },
     CARTS_UPDATE: {
       deliveryMethod: DeliveryMethod.Http,
       callbackUrl: "/webhooks",
-      callback: async (topic, shopDomain, body, webhookId) => {},
+      callback: async (topic, domain, webhookId) => {
+        console.log("shopify.server.js: Carts_Update!");
+        try {
+          console.log("CARTS_UPDATE");
+          console.log("WebhookId: ", webhookId);
+        } catch (err) {
+          console.log(err);
+          return
+        }
+      },
     }
   },
   hooks: {

@@ -1,8 +1,8 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 name = "profit-peak-ads-track"
-client_id = "101ea4c76046514d4961f228a58397ac"
-application_url = "https://lopez-tunisia-conspiracy-moderator.trycloudflare.com"
+client_id = "e40ca246250455ea9c7e5f626d4fa615"
+application_url = "https://bulletin-cloudy-bathroom-control.trycloudflare.com"
 embedded = true
 
 [access_scopes]
@@ -11,9 +11,9 @@ scopes = "write_products,read_orders,read_assigned_fulfillment_orders,read_merch
 
 [auth]
 redirect_urls = [
-  "https://lopez-tunisia-conspiracy-moderator.trycloudflare.com/auth/callback",
-  "https://lopez-tunisia-conspiracy-moderator.trycloudflare.com/auth/shopify/callback",
-  "https://lopez-tunisia-conspiracy-moderator.trycloudflare.com/api/auth/callback"
+  "https://bulletin-cloudy-bathroom-control.trycloudflare.com/auth/callback",
+  "https://bulletin-cloudy-bathroom-control.trycloudflare.com/auth/shopify/callback",
+  "https://bulletin-cloudy-bathroom-control.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

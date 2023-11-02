@@ -11,7 +11,6 @@ import {
 import { authenticate } from "../shopify.server";
 
 export const loader = async ({ request }) => {
-
   const { admin } = await authenticate.admin(request);
   const response = await admin.graphql(`
     query getOrders {
@@ -21,6 +20,7 @@ export const loader = async ({ request }) => {
             id
             name
             note
+            updatedAt
             customer {
               id
               firstName
@@ -88,7 +88,6 @@ export default function Index() {
   const data = useLoaderData();
 
   const isLoading = ["loading"].includes(nav.state);
-  const itemCounts = 11;
 
   const resourceName = {
     singular: 'visit',
@@ -117,6 +116,7 @@ export default function Index() {
         <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.id}</div></IndexTable.Cell>
         <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.name}</div></IndexTable.Cell>
         <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.note}</div></IndexTable.Cell>
+        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.updatedAt}</div></IndexTable.Cell>
         <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customer && order.customer.id}</div></IndexTable.Cell>
         <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customer && (order.customer.firstName + " " + order.customer.lastName)}</div></IndexTable.Cell>
         <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.customerOrderIndex}</div></IndexTable.Cell>
@@ -136,7 +136,6 @@ export default function Index() {
         <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.utmParameters && order.customerJourneySummary.firstVisit.utmParameters.source}</div></IndexTable.Cell>
         <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.utmParameters && order.customerJourneySummary.firstVisit.utmParameters.term}</div></IndexTable.Cell>
         <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.landingPage}</div></IndexTable.Cell>
-        <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.landingPageHtml}</div></IndexTable.Cell>
         <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.occurredAt}</div></IndexTable.Cell>
         <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.referralCode}</div></IndexTable.Cell>
         <IndexTable.Cell><div style={{textAlign: 'center'}}>{order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.referralInfoHtml}</div></IndexTable.Cell>
@@ -172,6 +171,7 @@ export default function Index() {
                 {title: 'Order ID', alignment: 'center'},
                 {title: 'Order Name', alignment: 'center'},
                 {title: 'Order Note', alignment: 'center'},
+                {title: 'Order Date', alignment: 'center'},
                 {title: 'Customer ID', alignment: 'center'},
                 {title: 'Customer Name', alignment: 'center'},
                 {title: 'Customer Order Index', alignment: 'center'},
@@ -191,7 +191,6 @@ export default function Index() {
                 {title: 'FirstVisit UTM Source', alignment: 'center'},
                 {title: 'FirstVisit UTM Term', alignment: 'center'},
                 {title: 'LastVisit Landing Page', alignment: 'center'},
-                {title: 'LastVisit Landing Page Html', alignment: 'center'},
                 {title: 'LastVisit OccurredAt', alignment: 'center'},
                 {title: 'LastVisit Referral Code', alignment: 'center'},
                 {title: 'LastVisit Referral Info Html', alignment: 'center'},

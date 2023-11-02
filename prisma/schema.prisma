@@ -26,11 +26,12 @@ model CustomerVisit {
   orderId                     String
   orderName                   String
   orderNote                   String?
+  orderUpdatedAt              DateTime
   customerId                  String
   customerName                String?
-  customerOrderIndex          Int
+  customerOrderIndex          Int?
   daysToConversion            Int?
-  momentsCount                Int
+  momentsCount                Int?
   firstVisitLandingPage       String?
   firstVisitOccuredAt         DateTime?
   firstVisitReferralCode      String?
@@ -57,4 +58,14 @@ model CustomerVisit {
   lastVisitUtmMedium          String?
   lastVisitUtmSource          String?
   lastVisitUtmTerm            String?
+}
+
+model TrailPixel {
+  id                          Int       @id @default(autoincrement())
+  order_name                  String
+  order_updated_at            DateTime
+  days_to_conversion          Int?
+  moments_count               Int?
+  trail_pixel                 String?
+  synced                      Boolean   @default(false)
 }

@@ -37,11 +37,6 @@ const shopify = shopifyApp({
       callbackUrl: "/webhooks",
       callback: async (topic, shopDomain, session, admin, payload) => {},
     },
-    ORDER_TRANSACTIONS_CREATE: {
-      deliveryMethod: DeliveryMethod.Http,
-      callbackUrl: "/webhooks",
-      callback: async (topic, shopDomain, session, admin, payload) => {},
-    },
     CARTS_CREATE: {
       deliveryMethod: DeliveryMethod.Http,
       callbackUrl: "/webhooks",
@@ -50,16 +45,7 @@ const shopify = shopifyApp({
     CARTS_UPDATE: {
       deliveryMethod: DeliveryMethod.Http,
       callbackUrl: "/webhooks",
-      callback: async (topic, domain, webhookId) => {
-        console.log("shopify.server.js: Carts_Update!");
-        try {
-          console.log("CARTS_UPDATE");
-          console.log("WebhookId: ", webhookId);
-        } catch (err) {
-          console.log(err);
-          return
-        }
-      },
+      callback: async (topic, domain, webhookId) => {},
     }
   },
   hooks: {

@@ -1,19 +1,19 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 name = "profit-peak-ads-track"
-client_id = "e40ca246250455ea9c7e5f626d4fa615"
-application_url = "https://bulletin-cloudy-bathroom-control.trycloudflare.com"
+client_id = "8cb41404f1ada8a203538ba91e394d55"
+application_url = "https://d74a-45-61-160-167.ngrok-free.app"
 embedded = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products,read_orders,read_assigned_fulfillment_orders,read_merchant_managed_fulfillment_orders,read_third_party_fulfillment_orders,write_assigned_fulfillment_orders,write_merchant_managed_fulfillment_orders,write_third_party_fulfillment_orders,read_customers"
+scopes = "read_orders,read_customers,write_pixels,read_customer_events"
 
 [auth]
 redirect_urls = [
-  "https://bulletin-cloudy-bathroom-control.trycloudflare.com/auth/callback",
-  "https://bulletin-cloudy-bathroom-control.trycloudflare.com/auth/shopify/callback",
-  "https://bulletin-cloudy-bathroom-control.trycloudflare.com/api/auth/callback"
+  "https://d74a-45-61-160-167.ngrok-free.app/auth/callback",
+  "https://d74a-45-61-160-167.ngrok-free.app/auth/shopify/callback",
+  "https://d74a-45-61-160-167.ngrok-free.app/api/auth/callback"
 ]
 
 [webhooks]

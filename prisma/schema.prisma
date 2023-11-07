@@ -21,45 +21,6 @@ model Session {
   userId      BigInt?
 }
 
-model CustomerVisit {
-  id                          Int    @id @default(autoincrement())
-  orderId                     String
-  orderName                   String
-  orderNote                   String?
-  orderUpdatedAt              DateTime
-  customerId                  String
-  customerName                String?
-  customerOrderIndex          Int?
-  daysToConversion            Int?
-  momentsCount                Int?
-  firstVisitLandingPage       String?
-  firstVisitOccuredAt         DateTime?
-  firstVisitReferralCode      String?
-  firstVisitReferralInfoHtml  String?
-  firstVisitReferrerUrl       String?
-  firstVisitSource            String?
-  firstVisitSourceDescription String?
-  firstVisitSourceType        String?
-  firstVisitUtmCampaign       String?
-  firstVisitUtmContent        String?
-  firstVisitUtmMedium         String?
-  firstVisitUtmSource         String?
-  firstVisitUtmTerm           String?
-  lastVisitLandingPage        String?
-  lastVisitOccuredAt          DateTime?
-  lastVisitReferralCode       String?
-  lastVisitReferralInfoHtml   String?
-  lastVisitReferrerUrl        String?
-  lastVisitSource             String?
-  lastVisitSourceDescription  String?
-  lastVisitSourceType         String?
-  lastVisitUtmCampaign        String?
-  lastVisitUtmContent         String?
-  lastVisitUtmMedium          String?
-  lastVisitUtmSource          String?
-  lastVisitUtmTerm            String?
-}
-
 model TrailPixel {
   id                          Int       @id @default(autoincrement())
   order_name                  String

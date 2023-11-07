@@ -1,59 +1,39 @@
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
-import { getLastUpdatedAt } from "../models/CustomerVisit.server";
+import { getLastUpdatedAt } from "../models/TrailPixel.server";
 
-const GET_ORDERS = `
+const GET_TRACKS = `
 query getOrders($numOrders: Int!, $cursor: String, $query: String) {
   orders (first: $numOrders, after: $cursor, query: $query) {
     edges {
       node {
-        id
         name
-        note
         updatedAt
-        customer {
-          id
-          firstName
-          lastName
-        }
+        clientIp
+        registeredSourceUrl
         customerJourneySummary {
-          customerOrderIndex
           daysToConversion
           momentsCount
           firstVisit {
             landingPage
-            landingPageHtml
             occurredAt
-            referralCode
-            referralInfoHtml
-            referrerUrl
             source
-            sourceDescription
-            sourceType
             utmParameters {
               campaign
               content
               medium
               source
-              term
             }
           }
           lastVisit {
             landingPage
-            landingPageHtml
             occurredAt
-            referralCode
-            referralInfoHtml
-            referrerUrl
             source
-            sourceDescription
-            sourceType
             utmParameters {
               campaign
               content
               medium
               source
-              term
             }
           }
         }
@@ -67,45 +47,39 @@ query getOrders($numOrders: Int!, $cursor: String, $query: String) {
 }
 `;
 
-const updateCustomerVisit = (graphql) => {
+const updateTrailPixels = (graphql) => {
 
   // Get last update_date from CustomerVist table
   getLastUpdatedAt().then(async (value) => {
     console.log("lastUpdateDate:", value);
-    getOrdersToSave(value, graphql).then((orders) => {
+    getTracksToSave(value, graphql).then((tracks) => {
 
-      // Convert the data into CustomerVisit model
-      const customerVisits = convertToCustomerVisit(orders);
-
-      customerVisits.map(async (visit, index) => {
+      tracks.map(async (track, index) => {
         try {
-          const visitJson = JSON.stringify(visit);
-          console.log("Order ", index, ": ", visitJson);
-          // // If customer visit info is not added yet, don't add the record
-          // // First record is in db already, so skip it
-          // if (visit.momentsCount && index > 0) {
-          //   await db.customerVisit.create({ data: visit });
-          // }
+          // If customer visit info is not added yet(moments_count = 0), don't add the record
+          // First record is in db already, so skip it
+          if (track.moments_count && index > 0) {
+            await db.trailPixel.create({ data: track });
+          }
         } catch(excep) {
-          console.log("Failed to store CustomerVisits in DB: ", excep);
-          console.log("Faiiled Visit: ", visit);
+          console.log("Failed to store TrailPixels in DB: ", excep);
+          console.log("Faiiled Track in Saving: ", track);
         }
       });
     });
   });
 };
 
-const getOrdersToSave = async (lastUpdateDate, graphql) => {
-  const ordersToSave = [];
+const getTracksToSave = async (lastUpdateDate, graphql) => {
+  const tracks = [];
   try {
     let query = null;
-    // if (lastUpdateDate) {
-    //   // If last update_date is not Null, get orders after the last update_date
-    //   console.log("LastUpdateDate is ", lastUpdateDate, ", it needs to add the rest.");
-    //   query = "updated_at:>'" + lastUpdateDate + "'";
-    // } else {
-    //   // If last update_date is Null, get all orders from Shopify
-    // }
+    if (lastUpdateDate) {
+      // If last update_date is not Null, get orders after the last update_date
+      query = "updated_at:>'" + lastUpdateDate + "'";
+    } else {
+      // If last update_date is Null, get all orders from Shopify
+    }
     
     // `first` or `last` argument is mandatary, set "first: 10" as default
     // Until `pageInfo.hasNextPage == false`, get orders and store data
@@ -115,7 +89,7 @@ const getOrdersToSave = async (lastUpdateDate, graphql) => {
 
     while(hasNextPage) {
       const response = await graphql(
-        GET_ORDERS,
+        GET_TRACKS,
         {
           variables: {
             numOrders: 10,
@@ -133,54 +107,67 @@ const getOrdersToSave = async (lastUpdateDate, graphql) => {
       hasNextPage = responseJson?.data?.orders?.pageInfo?.hasNextPage;
       cursor = responseJson?.data?.orders?.pageInfo?.endCursor;
 
-      ordersToSave.push(...orders);
+      tracks.push(...orders);
     }
   } catch (exception) {
-    console.log("Failed to update customer visit information.", exception);
+    console.log("Failed to Get Orders.", exception);
   }
 
-  return ordersToSave;
-}
+  // Return the tracks using TrailPixel model
+  return convertToTrailPixels(tracks);
+};
 
-const convertToCustomerVisit = (orders) => {
-  return orders.map((order) => ({
-    orderId                     : order.id,
-      orderName                   : order.name,
-      orderNote                   : order.note,
-      orderUpdatedAt              : order.updatedAt,
-      customerId                  : order.customer && order.customer.id,
-      customerName                : order.customer && (order.customer.firstName + " " + order.customer.lastName),
-      customerOrderIndex          : order.customerJourneySummary && order.customerJourneySummary.customerOrderIndex,
-      daysToConversion            : order.customerJourneySummary && order.customerJourneySummary.daysToConversion,
-      momentsCount                : order.customerJourneySummary && order.customerJourneySummary.momentsCount,
-      firstVisitLandingPage       : order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.landingPage,
-      firstVisitOccuredAt         : order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.occurredAt,
-      firstVisitReferralCode      : order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.referralCode,
-      firstVisitReferralInfoHtml  : order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.referralInfoHtml,
-      firstVisitReferrerUrl       : order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.referrerUrl,
-      firstVisitSource            : order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.source,
-      firstVisitSourceDescription : order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.sourceDescription,
-      firstVisitSourceType        : order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.sourceType,
-      firstVisitUtmCampaign       : order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.utmParameters && order.customerJourneySummary.firstVisit.utmParameters.campaign,
-      firstVisitUtmContent        : order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.utmParameters && order.customerJourneySummary.firstVisit.utmParameters.content,
-      firstVisitUtmMedium         : order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.utmParameters && order.customerJourneySummary.firstVisit.utmParameters.medium,
-      firstVisitUtmSource         : order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.utmParameters && order.customerJourneySummary.firstVisit.utmParameters.source,
-      firstVisitUtmTerm           : order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.utmParameters && order.customerJourneySummary.firstVisit.utmParameters.term,
-      lastVisitLandingPage        : order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.landingPage,
-      lastVisitOccuredAt          : order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.occurredAt,
-      lastVisitReferralCode       : order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.referralCode,
-      lastVisitReferralInfoHtml   : order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.referralInfoHtml,
-      lastVisitReferrerUrl        : order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.referrerUrl,
-      lastVisitSource             : order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.source,
-      lastVisitSourceDescription  : order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.sourceDescription,
-      lastVisitSourceType         : order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.sourceType,
-      lastVisitUtmCampaign        : order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.utmParameters && order.customerJourneySummary.lastVisit.utmParameters.campaign,
-      lastVisitUtmContent         : order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.utmParameters && order.customerJourneySummary.lastVisit.utmParameters.content,
-      lastVisitUtmMedium          : order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.utmParameters && order.customerJourneySummary.lastVisit.utmParameters.medium,
-      lastVisitUtmSource          : order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.utmParameters && order.customerJourneySummary.lastVisit.utmParameters.source,
-      lastVisitUtmTerm            : order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.utmParameters && order.customerJourneySummary.lastVisit.utmParameters.term
-  }))
-}
+const convertToTrailPixels = (orders) => {
+  return orders.map((order) => {
+    return {
+      order_name                  : order.name,
+      order_updated_at            : order.updatedAt,
+      days_to_conversion          : order.customerJourneySummary && order.customerJourneySummary.daysToConversion,
+      moments_count               : order.customerJourneySummary && order.customerJourneySummary.momentsCount,
+      trail_pixel                 : JSON.stringify(getTrailPixel(order))
+    }
+  });
+};
+
+const getTrailPixel = (order) => {
+  const firstVisitLandingPage       = order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.landingPage;
+  const firstVisitOccuredAt         = order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.occurredAt;
+  const firstVisitSource            = order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.source;
+  const firstVisitUtmCampaign       = order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.utmParameters && order.customerJourneySummary.firstVisit.utmParameters.campaign;
+  const firstVisitUtmContent        = order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.utmParameters && order.customerJourneySummary.firstVisit.utmParameters.content;
+  const firstVisitUtmMedium         = order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.utmParameters && order.customerJourneySummary.firstVisit.utmParameters.medium;
+  const firstVisitUtmSource         = order.customerJourneySummary && order.customerJourneySummary.firstVisit && order.customerJourneySummary.firstVisit.utmParameters && order.customerJourneySummary.firstVisit.utmParameters.source;
+      
+  const lastVisitLandingPage        = order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.landingPage;
+  const lastVisitOccuredAt          = order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.occurredAt;
+  const lastVisitSource             = order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.source;
+  const lastVisitUtmCampaign        = order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.utmParameters && order.customerJourneySummary.lastVisit.utmParameters.campaign;
+  const lastVisitUtmContent         = order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.utmParameters && order.customerJourneySummary.lastVisit.utmParameters.content;
+  const lastVisitUtmMedium          = order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.utmParameters && order.customerJourneySummary.lastVisit.utmParameters.medium;
+  const lastVisitUtmSource          = order.customerJourneySummary && order.customerJourneySummary.lastVisit && order.customerJourneySummary.lastVisit.utmParameters && order.customerJourneySummary.lastVisit.utmParameters.source;
+
+  return [{
+    tp_datetime: firstVisitOccuredAt,
+    tp_utm_campaign: firstVisitUtmCampaign,
+    tp_utm_content: firstVisitUtmContent,
+    tp_utm_medium: firstVisitUtmMedium,
+    tp_utm_source: firstVisitUtmSource,
+    path: firstVisitLandingPage,
+    ip_address: order.clientIp,
+    product_id_type: firstVisitSource,
+    version: "v1"
+  }, {
+    tp_datetime: lastVisitOccuredAt,
+    tp_utm_campaign: lastVisitUtmCampaign,
+    tp_utm_content: lastVisitUtmContent,
+    tp_utm_medium: lastVisitUtmMedium,
+    tp_utm_source: lastVisitUtmSource,
+    path: lastVisitLandingPage,
+    ip_address: order.clientIp,
+    product_id_type: lastVisitSource,
+    version: "v1"
+  }]
+};
 
 export const action = async ({ request }) => {
   const { topic, shop, session, admin, payload } = await authenticate.webhook(
@@ -199,18 +186,13 @@ export const action = async ({ request }) => {
       break;
     case "ORDERS_CREATE":
       console.log("Order Created!");
-      updateCustomerVisit(admin.graphql);
-      break;
-    case "ORDER_TRANSACTIONS_CREATE":
-      console.log("Order Transaction Created!");
+      // updateTrailPixels(admin.graphql);
       break;
     case "CARTS_CREATE":
       console.log("Cart Created!");
       break;
     case "CARTS_UPDATE":
       console.log("Cart Updated!");
-      // For test
-      updateCustomerVisit(admin.graphql);
       break;
     case "CUSTOMERS_DATA_REQUEST":
     case "CUSTOMERS_REDACT":

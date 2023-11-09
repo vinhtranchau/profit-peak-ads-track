@@ -1,17 +1,72 @@
 import { register } from "@shopify/web-pixels-extension";
 
+const setTrailPixel = (event, ip_address) => {
+  const params = new URLSearchParams(event.context.document.location.search);
+  const tp_id = params.get("tp_id");
+  const tp_cid = params.get("tp_cid");
+  const tp_pid = params.get("tp_pid");
+  const tp_source = params.get("tp_source");
+
+  let product_id = "";
+  let product_id_type = "";
+
+  // If tp_pid is available in search params, product_id = tp_pid & product_id_type = "source"
+  if (tp_pid) {
+    product_id = tp_pid;
+    product_id_type = "source";
+  } else {
+    // If it is possille to get product_id from event.data, product_id_type = "website" 
+    product_id = event.data?.productVariant?.product.id;
+    product_id = product_id || "";
+    product_id_type = product_id ? "website" : "";
+  }
+
+  let data = {
+    client_id: event.clientId,
+    tp_id,
+    tp_cid,
+    tp_source,
+    product_id,
+    product_id_type,
+    tp_datetime: event.timestamp,
+    tp_session: event.timestamp,
+    useragent: event.context.navigator.userAgent,
+    path: event.context.document.location.pathname,
+    ip_address,
+    version: 'v1',
+    event_name: event.name
+  };
+
+  const requestOptions = {
+    method: 'POST',
+    body: JSON.stringify(data),
+    keepalive: true,
+    headers: {
+      "Content-Type": "application/json"
+    }
+  }
+
+  fetch('https://2e727bdf16c0f6481cfdd8246892b47d.serveo.net/set-trail-pixel', requestOptions)
+    .then(response => response.json())
+    .then(jsonResponse => console.log(jsonResponse))
+    .catch(error => console.error('Error:', error));
+};
+
+const getIPAndSend = (event) => {
+  fetch('https://api.ipify.org?format=json')
+    .then(response => response.json())
+    .then(data => {
+      setTrailPixel(event, data.ip);
+    })
+    .catch(error => console.error('Error:', error));
+};
+
 register(async ({analytics, browser, settings}) => {
-  // // get/set your tracking cookies
-  // const uid = await browser.cookie.get('your_visitor_cookie');
-  // const pixelEndpoint = `https://example.com/pixel?id=${settings.accountID}&uid=${uid}`;
-
-  // subscribe to events
   analytics.subscribe('all_events', (event) => {
-
-    console.log(event);
-    // // transform the event payload to fit your schema (optional)
-
-    // // push customer event to your server for processing
-    // browser.sendBeacon(pixelEndpoint, event);
+    if (event.name === 'page_viewed') {
+      getIPAndSend(event);
+    } else if (event.name === 'product_viewed') {
+      getIPAndSend(event);
+    }
   });
 });

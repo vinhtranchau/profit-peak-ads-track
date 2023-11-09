@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 name = "profit-peak-ads-track"
-client_id = "8cb41404f1ada8a203538ba91e394d55"
+client_id = "7f5ef12910c4558659a3d1ffd0902ef7"
 application_url = "https://d74a-45-61-160-167.ngrok-free.app"
 embedded = true
 

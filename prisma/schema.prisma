@@ -6,8 +6,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:dev.sqlite"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Session {
@@ -21,12 +21,23 @@ model Session {
   userId      BigInt?
 }
 
-model TrailPixel {
-  id                          Int       @id @default(autoincrement())
-  order_name                  String
-  order_updated_at            DateTime
-  days_to_conversion          Int?
-  moments_count               Int?
-  trail_pixel                 String?
-  synced                      Boolean   @default(false)
+model Pixels {
+  id                Int                 @id @default(autoincrement())
+  client_id         String
+  tp_id             String?
+  tp_cid            String?
+  tp_source         String?
+  product_id        String?
+  product_id_type   String?
+  tp_datetime       DateTime
+  tp_session        DateTime
+  useragent         String
+  path              String
+  ip_address        String?
+  version           String
+  event_name        String
+  cart_variant_id   String?
+  cart_added_at     DateTime?
+  order_id          String?
+  ordered_at        DateTime?
 }

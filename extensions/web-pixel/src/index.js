@@ -1,11 +1,11 @@
 import { register } from "@shopify/web-pixels-extension";
 
-const setTrailPixel = (event, ip_address) => {
+const setPixel = (event, ip_address) => {
   const params = new URLSearchParams(event.context.document.location.search);
-  const tp_id = params.get("tp_id");
-  const tp_cid = params.get("tp_cid");
-  const tp_pid = params.get("tp_pid");
-  const tp_source = params.get("tp_source");
+  const tp_id = params.get("tp_id") || "";
+  const tp_cid = params.get("tp_cid") || "";
+  const tp_pid = params.get("tp_pid") || "";
+  const tp_source = params.get("tp_source") || "";
 
   let product_id = "";
   let product_id_type = "";
@@ -21,7 +21,7 @@ const setTrailPixel = (event, ip_address) => {
     product_id_type = product_id ? "website" : "";
   }
 
-  let data = {
+  const data = {
     client_id: event.clientId,
     tp_id,
     tp_cid,
@@ -46,27 +46,57 @@ const setTrailPixel = (event, ip_address) => {
     }
   }
 
-  fetch('https://2e727bdf16c0f6481cfdd8246892b47d.serveo.net/set-trail-pixel', requestOptions)
+  fetch('https://trailpixel.serveo.net/api/set-pixel', requestOptions)
     .then(response => response.json())
     .then(jsonResponse => console.log(jsonResponse))
     .catch(error => console.error('Error:', error));
 };
 
-const getIPAndSend = (event) => {
+const getIPAndSetPixel = (event) => {
   fetch('https://api.ipify.org?format=json')
     .then(response => response.json())
     .then(data => {
-      setTrailPixel(event, data.ip);
+      setPixel(event, data.ip);
     })
     .catch(error => console.error('Error:', error));
 };
 
-register(async ({analytics, browser, settings}) => {
-  analytics.subscribe('all_events', (event) => {
-    if (event.name === 'page_viewed') {
-      getIPAndSend(event);
-    } else if (event.name === 'product_viewed') {
-      getIPAndSend(event);
+const setTrailPixel = (event) => {
+  const data = {
+    client_id: event.clientId,
+    order_time: event.timestamp,
+    order_id: event.data.checkout.order.id,
+    total_price: event.data.checkout.totalPrice,
+    trail_pixel_useragent: event.context.navigator.userAgent,
+    event_name: event.name
+  }
+
+  const requestOptions = {
+    method: 'POST',
+    body: JSON.stringify(data),
+    keepalive: true,
+    headers: {
+      "Content-Type": "application/json"
     }
+  }
+
+  fetch('https://trailpixelsrv.serveo.net/set-trail-pixel', requestOptions)
+    .then(response => response.json())
+    .then(jsonResponse => console.log(jsonResponse))
+    .catch(error => console.error('Error:', error));
+}
+
+register(async ({analytics, browser, settings}) => {
+  analytics.subscribe('page_viewed', (event) => {
+    getIPAndSetPixel(event);
+  });
+
+  analytics.subscribe('product_viewed', (event) => {
+    getIPAndSetPixel(event);
+  });
+
+  analytics.subscribe('checkout_completed', (event) => {
+    setTrailPixel(event);
   });
 });
+
